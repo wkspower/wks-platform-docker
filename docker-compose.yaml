@@ -27,6 +27,11 @@ services:
     minio:
         image: quay.io/minio/minio
         command: server /data --console-address ":9090"
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 30s
+            timeout: 20s
+            retries: 3
         ports:
             - 9000:9000
             - 9090:9090
@@ -92,7 +97,7 @@ services:
             - keycloak:/opt/keycloak/data/
 
     case-engine-rest-api:
-        image: ghcr.io/wkspower/case-engine-rest-api:v1.0
+        image: ghcr.io/wkspower/case-engine-rest-api:v1.0.2
         ports:
             - 8081:8081
         links:
@@ -111,7 +116,7 @@ services:
                 condition: service_healthy
 
     bpm-engine-c7-external-service:
-        image: ghcr.io/wkspower/bpm-engine-c7-external-service:v1.0
+        image: ghcr.io/wkspower/bpm-engine-c7-external-service:v1.0.2
         links:
             - mongodb
             - camunda
@@ -128,7 +133,7 @@ services:
                 condition: service_healthy
 
     email-to-case:
-        image: ghcr.io/wkspower/email-to-case:v1.0
+        image: ghcr.io/wkspower/email-to-case:v1.0.2
         ports:
             - 8083:8083
         links:
@@ -148,8 +153,22 @@ services:
             camunda:
                 condition: service_healthy
 
+    storage-api:
+        image: ghcr.io/wkspower/storage-api:v1.0.2
+        ports:
+            - 8085:8085
+        links:
+            - minio
+        environment:
+            - OPA_URL=http://opa:8181/v1/data/wks/authz/allow
+            - KEYCLOAK_URL=http://keycloak:8080
+            - MINIO_HOST=minio
+        depends_on:
+            minio:
+                condition: service_healthy                
+
     case-portal:
-        image: ghcr.io/wkspower/case-portal-react:v1.0
+        image: ghcr.io/wkspower/case-portal-react:v1.0.2
         environment:
             REACT_APP_KEYCLOAK_URL: http://localhost:8082
             REACT_APP_API_URL: http://localhost:8081
@@ -159,7 +178,7 @@ services:
             - 3001:80
 
     case-engine-loader:
-        image: ghcr.io/wkspower/case-engine-loader:v1.0
+        image: ghcr.io/wkspower/case-engine-loader:v1.0.2
         environment:
             - CAMUNDA_URL=http://camunda:8080/engine-rest
             - MONGO_DATABASE=localhost
