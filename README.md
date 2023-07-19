@@ -3,8 +3,6 @@ This docker-compose configuration leverages pre-built images from the WKS Platfo
 ```bash
 git clone https://github.com/wkspower/wks-platform-docker.git
 cd wks-platform-docker
-git clone https://github.com/wkspower/wks-platform-docker.git
-cd wks-platform-docker
 docker-compose up -d
 ```
 
