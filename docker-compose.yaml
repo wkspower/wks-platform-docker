@@ -97,7 +97,7 @@ services:
             - keycloak:/opt/keycloak/data/
 
     case-engine-rest-api:
-        image: ghcr.io/wkspower/case-engine-rest-api:v1.0.2
+        image: ghcr.io/wkspower/case-engine-rest-api:v1.1
         ports:
             - 8081:8081
         links:
@@ -116,7 +116,7 @@ services:
                 condition: service_healthy
 
     bpm-engine-c7-external-service:
-        image: ghcr.io/wkspower/bpm-engine-c7-external-service:v1.0.2
+        image: ghcr.io/wkspower/bpm-engine-c7-external-service:v1.1
         links:
             - mongodb
             - camunda
@@ -133,7 +133,7 @@ services:
                 condition: service_healthy
 
     email-to-case:
-        image: ghcr.io/wkspower/email-to-case:v1.0.2
+        image: ghcr.io/wkspower/email-to-case:v1.1
         ports:
             - 8083:8083
         links:
@@ -154,7 +154,7 @@ services:
                 condition: service_healthy
 
     storage-api:
-        image: ghcr.io/wkspower/storage-api:v1.0.2
+        image: ghcr.io/wkspower/storage-api:v1.1
         ports:
             - 8085:8085
         links:
@@ -168,7 +168,7 @@ services:
                 condition: service_healthy                
 
     case-portal:
-        image: ghcr.io/wkspower/case-portal-react:v1.0.2
+        image: ghcr.io/wkspower/case-portal-react:v1.1
         environment:
             REACT_APP_KEYCLOAK_URL: http://localhost:8082
             REACT_APP_API_URL: http://localhost:8081
@@ -178,7 +178,7 @@ services:
             - 3001:80
 
     case-engine-loader:
-        image: ghcr.io/wkspower/case-engine-loader:v1.0.2
+        image: ghcr.io/wkspower/case-engine-loader:v1.1
         environment:
             - CAMUNDA_URL=http://camunda:8080/engine-rest
             - MONGO_DATABASE=localhost
