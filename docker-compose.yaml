@@ -64,7 +64,7 @@ services:
             - /policies
 
     camunda:
-        image: camunda/camunda-bpm-platform:run-7.19.0-SNAPSHOT
+        image: camunda/camunda-bpm-platform:run-7.20.0
         command: ./camunda.sh --rest --webapps
         ports:
             - 8080:8080
