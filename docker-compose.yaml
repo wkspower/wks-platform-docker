@@ -55,7 +55,7 @@ services:
             - mongo:/data/db:rw
 
     opa:
-        image: ghcr.io/wkspower/policy-decision-api:${TAG}
+        image: ghcr.io/wkspower/opa:${TAG}
         ports:
             - 8181:8181        
         command:
@@ -64,7 +64,7 @@ services:
             - /policies
 
     camunda:
-        image: camunda/camunda-bpm-platform:run-7.19.0-SNAPSHOT
+        image: camunda/camunda-bpm-platform:run-7.20.0
         command: ./camunda.sh --rest --webapps
         ports:
             - 8080:8080
@@ -168,7 +168,7 @@ services:
                 condition: service_healthy                
 
     case-portal:
-        image: ghcr.io/wkspower/case-portal-react:${TAG}
+        image: ghcr.io/wkspower/case-portal:${TAG}
         environment:
             REACT_APP_KEYCLOAK_URL: http://localhost:8082
             REACT_APP_API_URL: http://localhost:8081
@@ -178,7 +178,7 @@ services:
             - 3001:80
 
     case-engine-loader:
-        image: ghcr.io/wkspower/case-engine-loader:${TAG}
+        image: ghcr.io/wkspower/demo-data-loader:${TAG}
         environment:
             - CAMUNDA_URL=http://camunda:8080/engine-rest
             - MONGO_DATABASE=localhost
