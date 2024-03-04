@@ -1,29 +1,5 @@
 version: '3.7'
-services:
-    traefik:
-        profiles:
-            - servers
-        image: traefik:v2.8
-        command:
-            - --log.level=debug
-            - --api.insecure=true
-            - --api.dashboard=true
-            - --entrypoints.web.address=:80
-            - --entrypoints.websecure.address=:443
-            - --providers.docker=true
-            - --experimental.hub=true
-            - --providers.docker.exposedbydefault=false
-            - --serversTransport.insecureSkipVerify=true
-            - --providers.file.watch=true
-            - --providers.file.directory=/traefik            
-        ports:
-            - 80:80
-            - 443:443
-            - 8888:8080
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-            - ./configs/traefik:/traefik:ro
-            
+services:            
     minio:
         image: quay.io/minio/minio
         command: server /data --console-address ":9090"
@@ -118,14 +94,15 @@ services:
     bpm-engine-c7-external-service:
         image: ghcr.io/wkspower/bpm-engine-c7-external-service:${TAG}
         links:
-            - mongodb
+            - case-engine-rest-api
             - camunda
         environment:
             - CAMUNDA_BASE_URL=http://camunda:8080/engine-rest
             - CAMUNDA_USERNAME=demo
             - CAMUNDA_PASSWORD=demo
-            - MONGO_DATABASE=wks
-            - MONGO_CONN=mongodb://mongodb
+            - KEYCLOAK_URL=http://keycloak:8080/realms/localhost/protocol/openid-connect/token
+            - WKS_CASE_API_URL=http://case-engine-rest-api:8081
+            - WEBSOCKET_ENABLED=false
         depends_on:
             mongodb:
                 condition: service_healthy
@@ -163,17 +140,14 @@ services:
             - OPA_URL=http://opa:8181/v1/data/wks/authz/allow
             - KEYCLOAK_URL=http://keycloak:8080
             - MINIO_HOST=minio
+            - MINIO_ROOT_USER=minio
+            - MINIO_ROOT_PASSWORD=#minio00#            
         depends_on:
             minio:
                 condition: service_healthy                
 
     case-portal:
         image: ghcr.io/wkspower/case-portal:${TAG}
-        environment:
-            REACT_APP_KEYCLOAK_URL: http://localhost:8082
-            REACT_APP_API_URL: http://localhost:8081
-            REACT_APP_EMAIL_URL: http://localhost:8083
-            REACT_APP_STORAGE_URL: http://localhost:8085
         ports:
             - 3001:80
 
@@ -184,6 +158,11 @@ services:
             - MONGO_DATABASE=localhost
             - MONGO_CONN=mongodb://mongodb
             - KEYCLOAK_URL=http://keycloak:8080
+            - KEYCLOAK_DEFAULT_USER=demo
+            - KEYCLOAK_DEFAULT_USER_PASSWORD=demo
+            - KEYCLOAK_DEFAULT_USER_EMAIL=demo@demo.com
+            - KEYCLOAK_DEFAULT_USER_FIRST_NAME=demo
+            - KEYCLOAK_DEFAULT_USER_LAST_NAME=demo
         links:
             - mongodb
             - camunda
