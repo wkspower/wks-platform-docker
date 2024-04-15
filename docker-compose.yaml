@@ -80,6 +80,7 @@ services:
             - mongodb
             - camunda
         environment:
+            - CAMUNDA_VERSION=camunda7
             - CAMUNDA_BASE_URL=http://camunda:8080/engine-rest
             - MONGO_DATABASE=wks
             - MONGO_CONN=mongodb://mongodb
@@ -91,8 +92,8 @@ services:
             camunda:
                 condition: service_healthy
 
-    bpm-engine-c7-external-service:
-        image: ghcr.io/wkspower/bpm-engine-c7-external-service:${TAG}
+    c7-external-tasks:
+        image: ghcr.io/wkspower/c7-external-tasks:${TAG}
         links:
             - case-engine-rest-api
             - camunda
@@ -103,30 +104,8 @@ services:
             - KEYCLOAK_URL=http://keycloak:8080/realms/localhost/protocol/openid-connect/token
             - WKS_CASE_API_URL=http://case-engine-rest-api:8081
             - WEBSOCKET_ENABLED=false
+            - DISABLE_BACKOFF_STRATEGY=true
         depends_on:
-            mongodb:
-                condition: service_healthy
-            camunda:
-                condition: service_healthy
-
-    email-to-case:
-        image: ghcr.io/wkspower/email-to-case:${TAG}
-        ports:
-            - 8083:8083
-        links:
-            - mongodb
-            - camunda
-        environment:
-            - CAMUNDA_BASE_URL=http://camunda:8080/engine-rest
-            - MONGO_DATABASE=wks
-            - MONGO_CONN=mongodb://mongodb
-            - EMAIL_CASE_PATTERN_NEW=new-case
-            - EMAIL_CASE_PATTERN_UPDATE=update-case
-            - KEYCLOAK_URL=http://keycloak:8080
-            - OPA_URL=http://opa:8181/v1/data/wks/authz/allow
-        depends_on:
-            mongodb:
-                condition: service_healthy
             camunda:
                 condition: service_healthy
 
@@ -154,6 +133,8 @@ services:
     case-engine-loader:
         image: ghcr.io/wkspower/demo-data-loader:${TAG}
         environment:
+            - CAMUNDA7_DATA_IMPORT_ENABLED=true
+            - CAMUNDA8_DATA_IMPORT_ENABLED=false
             - CAMUNDA_URL=http://camunda:8080/engine-rest
             - MONGO_DATABASE=localhost
             - MONGO_CONN=mongodb://mongodb
