@@ -1,5 +1,6 @@
 version: '3.7'
-services:            
+name: wks-platform
+services:
     minio:
         image: quay.io/minio/minio
         command: server /data --console-address ":9090"
@@ -12,13 +13,13 @@ services:
             - 9000:9000
             - 9090:9090
         environment:
-            - MINIO_ROOT_USER=minio
-            - MINIO_ROOT_PASSWORD=#minio00#
+            - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+            - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
         volumes:
             - minio:/data:rw
 
     mongodb:
-        image: mongo
+        image: mongo:6.0.14
         ports:
             - 27017:27017
         healthcheck:
@@ -39,75 +40,23 @@ services:
             - --server
             - /policies
 
-    camunda:
-        image: camunda/camunda-bpm-platform:run-7.20.0
-        command: ./camunda.sh --rest --webapps
-        ports:
-            - 8080:8080
-        healthcheck:
-            test: curl --fail http://localhost:8080/engine-rest/version || exit 1
-            interval: 10s
-            retries: 3
-            start_period: 5s
-            timeout: 10s
-        depends_on:
-            mongodb:
-                condition: service_healthy
-
     keycloak:
         image: quay.io/keycloak/keycloak:20.0.3
         command: start-dev
         environment:
             KC_HEALTH_ENABLED: "true"
-            KEYCLOAK_ADMIN: admin
-            KEYCLOAK_ADMIN_PASSWORD: admin
+            KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+            KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
         healthcheck:
             test: curl --fail http://localhost:8080/health/ready || exit 1
             interval: 10s
-            retries: 6
-            start_period: 10s
-            timeout: 60s
+            retries: 10
+            start_period: 5s
+            timeout: 20s
         ports:
             - 8082:8080
         volumes:
             - keycloak:/opt/keycloak/data/
-
-    case-engine-rest-api:
-        image: ghcr.io/wkspower/case-engine-rest-api:${TAG}
-        ports:
-            - 8081:8081
-        links:
-            - mongodb
-            - camunda
-        environment:
-            - CAMUNDA_VERSION=camunda7
-            - CAMUNDA_BASE_URL=http://camunda:8080/engine-rest
-            - MONGO_DATABASE=wks
-            - MONGO_CONN=mongodb://mongodb
-            - KEYCLOAK_URL=http://keycloak:8080
-            - OPA_URL=http://opa:8181/v1/data/wks/authz/allow
-        depends_on:
-            mongodb:
-                condition: service_healthy
-            camunda:
-                condition: service_healthy
-
-    c7-external-tasks:
-        image: ghcr.io/wkspower/c7-external-tasks:${TAG}
-        links:
-            - case-engine-rest-api
-            - camunda
-        environment:
-            - CAMUNDA_BASE_URL=http://camunda:8080/engine-rest
-            - CAMUNDA_USERNAME=demo
-            - CAMUNDA_PASSWORD=demo
-            - KEYCLOAK_URL=http://keycloak:8080/realms/localhost/protocol/openid-connect/token
-            - WKS_CASE_API_URL=http://case-engine-rest-api:8081
-            - WEBSOCKET_ENABLED=false
-            - DISABLE_BACKOFF_STRATEGY=true
-        depends_on:
-            camunda:
-                condition: service_healthy
 
     storage-api:
         image: ghcr.io/wkspower/storage-api:${TAG}
@@ -116,44 +65,14 @@ services:
         links:
             - minio
         environment:
-            - OPA_URL=http://opa:8181/v1/data/wks/authz/allow
-            - KEYCLOAK_URL=http://keycloak:8080
-            - MINIO_HOST=minio
-            - MINIO_ROOT_USER=minio
-            - MINIO_ROOT_PASSWORD=#minio00#            
+            - OPA_URL=${OPA_URL}
+            - KEYCLOAK_URL=${KEYCLOAK_URL}
+            - MINIO_HOST_INTERNAL=${MINIO_HOST_INTERNAL}
+            - MINIO_HOST_EXTERNAL=${MINIO_HOST_EXTERNAL}
+            - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+            - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
         depends_on:
             minio:
-                condition: service_healthy                
-
-    case-portal:
-        image: ghcr.io/wkspower/case-portal:${TAG}
-        ports:
-            - 3001:80
-
-    case-engine-loader:
-        image: ghcr.io/wkspower/demo-data-loader:${TAG}
-        environment:
-            - CAMUNDA7_DATA_IMPORT_ENABLED=true
-            - CAMUNDA8_DATA_IMPORT_ENABLED=false
-            - CAMUNDA_URL=http://camunda:8080/engine-rest
-            - MONGO_DATABASE=localhost
-            - MONGO_CONN=mongodb://mongodb
-            - KEYCLOAK_URL=http://keycloak:8080
-            - KEYCLOAK_DEFAULT_USER=demo
-            - KEYCLOAK_DEFAULT_USER_PASSWORD=demo
-            - KEYCLOAK_DEFAULT_USER_EMAIL=demo@demo.com
-            - KEYCLOAK_DEFAULT_USER_FIRST_NAME=demo
-            - KEYCLOAK_DEFAULT_USER_LAST_NAME=demo
-        links:
-            - mongodb
-            - camunda
-            - keycloak
-        depends_on:
-            mongodb:
-                condition: service_healthy
-            camunda:
-                condition: service_healthy
-            keycloak:
                 condition: service_healthy
 
 volumes:
@@ -162,4 +81,4 @@ volumes:
     minio:
         driver: local
     keycloak:
-        driver: local
+        driver: local                
